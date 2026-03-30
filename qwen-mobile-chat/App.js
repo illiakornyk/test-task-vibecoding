@@ -14,6 +14,7 @@ import {
   Switch,
 } from 'react-native';
 import { initLlama } from 'llama.rn';
+import { Asset } from 'expo-asset';
 
 // API Configuration securely referencing the OpenRouter Key from Expo environment variables
 const OPENROUTER_API_KEY = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
@@ -37,9 +38,18 @@ export default function App() {
     if (value && !localLlama) {
       try {
         console.log("Initializing local model...");
-        // This requires the gguf asset logic built into metro.config.js
+        
+        // 1. Resolve and download the bundled asset to the device's native file system
+        const modelAsset = Asset.fromModule(require('./qwen-0.5b.gguf'));
+        if (!modelAsset.localUri) {
+           await modelAsset.downloadAsync();
+        }
+        
+        // 2. Pass the absolute file system path to the Native C++ LLaMA Engine
+        const modelPath = modelAsset.localUri.replace('file://', '');
+
         const llamaContext = await initLlama({
-          model: require('./qwen-0.5b.gguf'),
+          model: modelPath,
           use_mlock: true, // Keep it locked in RAM for fast generation
           n_ctx: 2048,     // Context window suited for Qwen
         });
