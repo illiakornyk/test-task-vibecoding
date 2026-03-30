@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model GuestUsage {
+  ipHash String @id
+  count  Int    @default(0)
+}
+
+model User {
+  id                    String   @id @default(cuid())
+  clerkId               String   @unique
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  hasActiveSubscription Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  records               Record[]
+}
+
+model Record {
+  id              String   @id @default(cuid())
+  userId          String?
+  transcribedText String   @db.Text
+  aiResponse      String   @db.Text
+  createdAt       DateTime @default(now())
+
+  // Relation mapping
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
