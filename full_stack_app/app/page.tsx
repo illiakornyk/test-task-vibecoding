@@ -1,16 +1,28 @@
 import { VoiceRecorder } from "@/components/voice-recorder";
 import { SubscribeButton } from "@/components/subscribe-button";
 
-export default function Home() {
+import { auth } from "@clerk/nextjs/server";
+import prisma from "@/lib/prisma";
+
+export default async function Home() {
+  const { userId } = await auth();
+  let isPro = false;
+  if (userId) {
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    isPro = !!user?.hasActiveSubscription;
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans selection:bg-zinc-200 dark:selection:bg-zinc-800">
       <main className="container mx-auto px-4 py-24 sm:px-6 lg:px-8 flex flex-col items-center">
         {/* Hero Section */}
         <div className="text-center space-y-8 mb-16 max-w-2xl mx-auto">
-          <div className="inline-flex items-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-sm font-medium">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-            Try your 1 free record
-          </div>
+          {!isPro && (
+            <div className="inline-flex items-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-sm font-medium">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
+              Try your 3 free records
+            </div>
+          )}
           
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 leading-tight">
             Speak your mind, we'll
@@ -32,12 +44,14 @@ export default function Home() {
         </div>
 
         {/* Upgrade CTA */}
-        <div className="mt-16 flex flex-col items-center gap-4 text-center">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Want unlimited recordings? Upgrade to Pro.
-          </p>
-          <SubscribeButton />
-        </div>
+        {!isPro && (
+          <div className="mt-16 flex flex-col items-center gap-4 text-center">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Want unlimited recordings? Upgrade to Plus.
+            </p>
+            <SubscribeButton />
+          </div>
+        )}
       </main>
     </div>
   );

@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server'
 import { groq } from '@/lib/groq'
+import { checkUsageLimit } from '@/lib/user-usage'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   try {
+    const usage = await checkUsageLimit(req)
+    if (!usage.allowed) {
+      return NextResponse.json(
+        { error: 'LIMIT_REACHED' },
+        { status: 403 }
+      )
+    }
+
     const formData = await req.formData()
     const audioFile = formData.get('audio') as File | null
 

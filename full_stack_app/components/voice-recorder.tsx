@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Mic, Square, Loader2 } from "lucide-react";
+import { useUser, SignInButton } from "@clerk/nextjs";
+import { Mic, Square, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SubscribeButton } from "@/components/subscribe-button";
 
 export function VoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
@@ -11,6 +13,8 @@ export function VoiceRecorder() {
   const [transcript, setTranscript] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const { isSignedIn, isLoaded } = useUser();
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
@@ -19,7 +23,21 @@ export function VoiceRecorder() {
     setTranscript("");
     setAiResponse("");
 
+    setIsProcessing(true);
+
     try {
+      const checkRes = await fetch("/api/check-usage");
+      if (!checkRes.ok) {
+        const checkData = await checkRes.json();
+        if (checkData.error === "LIMIT_REACHED") {
+          setShowPaywall(true);
+        } else {
+          setError(checkData.error || "Cannot start recording");
+        }
+        setIsProcessing(false);
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -44,6 +62,7 @@ export function VoiceRecorder() {
 
       mediaRecorder.start();
       setIsRecording(true);
+      setIsProcessing(false);
     } catch (err) {
       console.error("Mic access error:", err);
       setError("Microphone access denied. Please allow mic permissions.");
@@ -73,7 +92,11 @@ export function VoiceRecorder() {
       const transcribeData = await transcribeRes.json();
 
       if (!transcribeRes.ok) {
-        setError(transcribeData.error || "Transcription failed");
+        if (transcribeData.error === "LIMIT_REACHED") {
+          setShowPaywall(true);
+        } else {
+          setError(transcribeData.error || "Transcription failed");
+        }
         setIsProcessing(false);
         return;
       }
@@ -89,7 +112,11 @@ export function VoiceRecorder() {
       const chatData = await chatRes.json();
 
       if (!chatRes.ok) {
-        setError(chatData.error || "Chat response failed");
+        if (chatData.error === "LIMIT_REACHED") {
+          setShowPaywall(true);
+        } else {
+          setError(chatData.error || "Chat response failed");
+        }
         setIsProcessing(false);
         return;
       }
@@ -184,6 +211,44 @@ export function VoiceRecorder() {
           )}
         </div>
       </CardContent>
+
+      {/* Premium Paywall overlay */}
+      {showPaywall && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="relative w-full max-w-sm mx-4 bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mb-6">
+              <Lock className="w-8 h-8 text-rose-500" />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">
+              Limit Reached
+            </h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed">
+              You've used all your free VoiceAI records. 
+              {isSignedIn ? " Upgrade to Plus to unlock unlimited transcriptions and AI conversations." : " Create a free account or sign in to continue using VoiceAI."}
+            </p>
+            
+            <div className="w-full flex-col flex gap-3">
+              {isLoaded && isSignedIn ? (
+                <SubscribeButton className="w-full justify-center px-6 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
+                  Upgrade to Plus — $5/mo
+                </SubscribeButton>
+              ) : (
+                <SignInButton mode="modal">
+                  <button className="w-full px-6 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold hover:opacity-90 transition-opacity">
+                    Sign In to Continue
+                  </button>
+                </SignInButton>
+              )}
+              <button 
+                onClick={() => setShowPaywall(false)}
+                className="w-full px-6 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
