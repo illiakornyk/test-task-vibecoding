@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   StatusBar,
   Switch,
+  Keyboard,
 } from 'react-native';
 import { initLlama } from 'llama.rn';
 import { Asset } from 'expo-asset';
@@ -32,6 +33,26 @@ export default function App() {
   const [localLlama, setLocalLlama] = useState(null);
   // State for indicating if the heavy local model is currently booting into RAM
   const [isInitializing, setIsInitializing] = useState(false);
+  
+  // Custom tracking for exact Android keyboard heights to bypass edgeToEdge bugs
+  const [keyboardPadding, setKeyboardPadding] = useState(0);
+
+  React.useEffect(() => {
+    if (Platform.OS === 'android') {
+      const showListener = Keyboard.addListener('keyboardDidShow', (e) => {
+        // e.endCoordinates.height gives the exact pixel height of the opened keyboard
+        setKeyboardPadding(e.endCoordinates.height);
+      });
+      const hideListener = Keyboard.addListener('keyboardDidHide', () => {
+        setKeyboardPadding(0);
+      });
+
+      return () => {
+        showListener.remove();
+        hideListener.remove();
+      };
+    }
+  }, []);
 
   // Initialize the native C++ LLaMA engine directly on the phone
   const initializeLocalModel = async (value) => {
@@ -269,6 +290,7 @@ export default function App() {
 
   return (
     <View style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       {/*
         ANDROID KEYBOARD TRAP FIX:
         For iOS, `padding` works well to shift view above the keyboard.
@@ -276,9 +298,8 @@ export default function App() {
         windowSoftInputMode automatically adjusts the layout.
       */}
       <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        style={[styles.container, { paddingBottom: Platform.OS === 'android' ? keyboardPadding : 0 }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Chat Title bar with Toggle */}
         <View style={styles.header}>
