@@ -1,4 +1,5 @@
 import { VoiceRecorder } from "@/components/voice-recorder";
+import { SubscribeButton } from "@/components/subscribe-button";
 
 export default function Home() {
   return (
@@ -28,6 +29,14 @@ export default function Home() {
         <div className="w-full relative z-10 w-full flex justify-center perspective">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-50 dark:to-zinc-950 -bottom-10 pointer-events-none" />
           <VoiceRecorder />
+        </div>
+
+        {/* Upgrade CTA */}
+        <div className="mt-16 flex flex-col items-center gap-4 text-center">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Want unlimited recordings? Upgrade to Pro.
+          </p>
+          <SubscribeButton />
         </div>
       </main>
     </div>
