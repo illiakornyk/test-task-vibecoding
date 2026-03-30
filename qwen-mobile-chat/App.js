@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  SafeAreaView,
   StatusBar,
   Switch,
 } from 'react-native';
@@ -31,11 +30,14 @@ export default function App() {
   const [isLocalMode, setIsLocalMode] = useState(false);
   // Store the active Llama context
   const [localLlama, setLocalLlama] = useState(null);
+  // State for indicating if the heavy local model is currently booting into RAM
+  const [isInitializing, setIsInitializing] = useState(false);
 
   // Initialize the native C++ LLaMA engine directly on the phone
   const initializeLocalModel = async (value) => {
     setIsLocalMode(value);
     if (value && !localLlama) {
+      setIsInitializing(true);
       try {
         console.log("Initializing local model...");
         
@@ -57,6 +59,8 @@ export default function App() {
         console.log("Local model ready!");
       } catch (e) {
         console.error("Failed to initialize Llama locally:", e);
+      } finally {
+        setIsInitializing(false);
       }
     }
   };
@@ -96,7 +100,9 @@ export default function App() {
       ]);
 
       if (isLocalMode) {
-        if (!localLlama) throw new Error("Local model not initialized yet");
+        if (!localLlama) {
+           throw new Error("Local model not initialized yet");
+        }
 
         // Format history exactly into Qwen's ChatML Prompt format native expectations
         let prompt = "";
@@ -262,7 +268,7 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       {/*
         ANDROID KEYBOARD TRAP FIX:
         For iOS, `padding` works well to shift view above the keyboard.
@@ -303,11 +309,13 @@ export default function App() {
           showsVerticalScrollIndicator={false}
         />
 
-        {/* Loading Indicator when Qwen is processing */}
-        {isLoading && (
+        {/* Loading Indicator when Qwen is processing or Initializing */}
+        {(isLoading || isInitializing) && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="#007BFF" />
-            <Text style={styles.loadingText}>Qwen is typing...</Text>
+            <Text style={styles.loadingText}>
+               {isInitializing ? "Loading 500MB Model into RAM..." : "Qwen is typing..."}
+            </Text>
           </View>
         )}
 
@@ -323,15 +331,15 @@ export default function App() {
           />
           {/* Disable send interaction if input is empty or request is loading */}
           <TouchableOpacity
-            style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendButtonDisabled]}
+            style={[styles.sendButton, (!inputText.trim() || isLoading || isInitializing) && styles.sendButtonDisabled]}
             onPress={handleSend}
-            disabled={!inputText.trim() || isLoading}
+            disabled={!inputText.trim() || isLoading || isInitializing}
           >
             <Text style={styles.sendButtonText}>Send</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -342,7 +350,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F7F7F8',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 47,
   },
   container: {
     flex: 1,
