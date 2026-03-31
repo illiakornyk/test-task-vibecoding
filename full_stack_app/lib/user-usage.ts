@@ -10,6 +10,7 @@ export type UsageStatus = {
   isGuest: boolean
   userId?: string
   ipHash?: string
+  remaining: number
 }
 
 export async function checkUsageLimit(req: Request): Promise<UsageStatus> {
@@ -24,7 +25,7 @@ export async function checkUsageLimit(req: Request): Promise<UsageStatus> {
     }
 
     if (user.hasActiveSubscription) {
-      return { allowed: true, isGuest: false, userId: user.id }
+      return { allowed: true, isGuest: false, userId: user.id, remaining: Infinity }
     }
 
     const recordCount = await prisma.record.count({
@@ -34,7 +35,8 @@ export async function checkUsageLimit(req: Request): Promise<UsageStatus> {
     return { 
       allowed: recordCount < FREE_RECORD_LIMIT, 
       isGuest: false, 
-      userId: user.id 
+      userId: user.id,
+      remaining: Math.max(0, FREE_RECORD_LIMIT - recordCount)
     }
   } else {
     // Guest
@@ -51,7 +53,8 @@ export async function checkUsageLimit(req: Request): Promise<UsageStatus> {
     return { 
       allowed: count < FREE_RECORD_LIMIT, 
       isGuest: true, 
-      ipHash 
+      ipHash,
+      remaining: Math.max(0, FREE_RECORD_LIMIT - count)
     }
   }
 }

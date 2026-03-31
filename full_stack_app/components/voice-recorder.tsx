@@ -122,6 +122,9 @@ export function VoiceRecorder() {
       }
 
       setAiResponse(chatData.response);
+      
+      // Trigger a refresh of the usage count everywhere
+      window.dispatchEvent(new CustomEvent("refresh-usage"));
     } catch (err) {
       console.error("Processing error:", err);
       setError("Something went wrong. Please try again.");

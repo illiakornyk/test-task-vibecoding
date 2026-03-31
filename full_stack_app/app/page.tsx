@@ -1,5 +1,6 @@
 import { VoiceRecorder } from "@/components/voice-recorder";
 import { SubscribeButton } from "@/components/subscribe-button";
+import { UsageBanner } from "@/components/usage-banner";
 
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
@@ -17,12 +18,7 @@ export default async function Home() {
       <main className="container mx-auto px-4 py-24 sm:px-6 lg:px-8 flex flex-col items-center">
         {/* Hero Section */}
         <div className="text-center space-y-8 mb-16 max-w-2xl mx-auto">
-          {!isPro && (
-            <div className="inline-flex items-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-sm font-medium">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-              Try your 3 free records
-            </div>
-          )}
+          {!isPro && <UsageBanner />}
           
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 leading-tight">
             Speak your mind, we'll

@@ -60,10 +60,16 @@ export default async function RootLayout({
               🎙️ VoiceAI
             </span>
             <div className="flex items-center gap-3">
-              {isPro && (
+              {isPro ? (
                 <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] uppercase font-bold tracking-wider mr-2">
                   Plus
                 </span>
+              ) : (
+                userId && (
+                  <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] uppercase font-bold tracking-wider mr-2">
+                    Free
+                  </span>
+                )
               )}
               <Show when="signed-out">
                 <SignInButton>
