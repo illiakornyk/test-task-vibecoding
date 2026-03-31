@@ -1,0 +1,17 @@
+Task #3
+
+Description Micro MVP (Clerk Auth, NextJS, OpenAI API, Supabase, Prisma, Stripe subscription, shadcnUI)
+
+Voice to text
+1 free record
+2nd record -> Auth -> Payment -> access to the platform -> ChatGPT view -> records to DB
+Deployment to Vercel or AWS Amplify
+Use: One tool for vibcoding with video Fireship https://youtu.be/Xn-gtHDsaPY?si=9Z--Hq3GB7J4dntC
+
+Delivery Record your computer screen + your comments GitHub repo URL Project URL for test Google Drive or Dropbox URL (share access not private)
+
+Additional notes:
+
+OpenAI require a $5 fund
+Share document via URL (Anyone with the link access)
+Test the voice on the video before recording
